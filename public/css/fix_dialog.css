@@ -1,0 +1,11 @@
+/* 强制隐藏对话框 */
+.dialog.hidden, 
+#confirmDialog.hidden, 
+#confirmDialog.dialog.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    z-index: -9999 !important;
+} 

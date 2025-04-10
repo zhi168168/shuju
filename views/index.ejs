@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小红书数据统计</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/fix_dialog.css">
+</head>
+<body>
+    <script src="/js/fix_dialog.js"></script>
+    <div id="app" class="container">
+        <header>
+            <h1>小红书数据统计</h1>
+        </header>
+        
+        <section class="add-product">
+            <div class="input-group">
+                <textarea id="productUrl" placeholder="请输入小红书商品链接，每行一个，支持批量添加" rows="3"></textarea>
+                <button id="addProductBtn">批量新增</button>
+            </div>
+            <div class="tip">提示：每行输入一个链接，回车分隔多个链接</div>
+            <button id="triggerCrawlBtn" class="secondary-btn">手动更新全部数据</button>
+        </section>
+        
+        <div id="loadingOverlay" class="hidden">
+            <div class="loading-container">
+                <div class="spinner"></div>
+                <p id="loadingText">正在爬取数据...</p>
+            </div>
+        </div>
+        
+        <section class="product-list">
+            <div class="table-actions">
+                <div class="results-info">共 <span id="totalCount"><%= products.length %></span> 条数据</div>
+                <div class="download-all">
+                    <button id="downloadAllBtn">导出全部数据</button>
+                </div>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>
+                            <a href="?sort=name&order=<%= currentSort === 'name' && currentOrder === 'asc' ? 'desc' : 'asc' %>">
+                                商品名称
+                                <% if (currentSort === 'name') { %>
+                                    <span class="sort-icon"><%= currentOrder === 'asc' ? '↑' : '↓' %></span>
+                                <% } %>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?sort=price&order=<%= currentSort === 'price' && currentOrder === 'asc' ? 'desc' : 'asc' %>">
+                                价格(元)
+                                <% if (currentSort === 'price') { %>
+                                    <span class="sort-icon"><%= currentOrder === 'asc' ? '↑' : '↓' %></span>
+                                <% } %>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?sort=sales&order=<%= currentSort === 'sales' && currentOrder === 'asc' ? 'desc' : 'asc' %>">
+                                商品销量
+                                <% if (currentSort === 'sales') { %>
+                                    <span class="sort-icon"><%= currentOrder === 'asc' ? '↑' : '↓' %></span>
+                                <% } %>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?sort=dailyProductSales&order=<%= currentSort === 'dailyProductSales' && currentOrder === 'asc' ? 'desc' : 'asc' %>">
+                                商品日销量
+                                <% if (currentSort === 'dailyProductSales') { %>
+                                    <span class="sort-icon"><%= currentOrder === 'asc' ? '↑' : '↓' %></span>
+                                <% } %>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?sort=dailyGMV&order=<%= currentSort === 'dailyGMV' && currentOrder === 'asc' ? 'desc' : 'asc' %>">
+                                商品日GMV
+                                <% if (currentSort === 'dailyGMV') { %>
+                                    <span class="sort-icon"><%= currentOrder === 'asc' ? '↑' : '↓' %></span>
+                                <% } %>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?sort=shopName&order=<%= currentSort === 'shopName' && currentOrder === 'asc' ? 'desc' : 'asc' %>">
+                                店铺名称
+                                <% if (currentSort === 'shopName') { %>
+                                    <span class="sort-icon"><%= currentOrder === 'asc' ? '↑' : '↓' %></span>
+                                <% } %>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?sort=shopSales&order=<%= currentSort === 'shopSales' && currentOrder === 'asc' ? 'desc' : 'asc' %>">
+                                店铺销量
+                                <% if (currentSort === 'shopSales') { %>
+                                    <span class="sort-icon"><%= currentOrder === 'asc' ? '↑' : '↓' %></span>
+                                <% } %>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?sort=dailyShopSales&order=<%= currentSort === 'dailyShopSales' && currentOrder === 'asc' ? 'desc' : 'asc' %>">
+                                店铺日销量
+                                <% if (currentSort === 'dailyShopSales') { %>
+                                    <span class="sort-icon"><%= currentOrder === 'asc' ? '↑' : '↓' %></span>
+                                <% } %>
+                            </a>
+                        </th>
+                        <th>最后更新</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (products && Array.isArray(products) && products.length > 0) { %>
+                        <% products.forEach(product => { %>
+                            <tr data-id="<%= product._id %>">
+                                <td>
+                                    <a href="<%= product.url %>" target="_blank" class="product-name">
+                                        <%= product.name %>
+                                    </a>
+                                </td>
+                                <td><%= product.price %></td>
+                                <td><%= product.sales.toLocaleString() %></td>
+                                <td>
+                                    <% if (product.dailyProductSales === 0 && !product.dailyData || product.dailyData.length <= 1) { %>
+                                        -
+                                    <% } else { %>
+                                        <%= product.dailyProductSales.toLocaleString() %>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <% if (product.dailyGMV === 0 && !product.dailyData || product.dailyData.length <= 1) { %>
+                                        -
+                                    <% } else { %>
+                                        <%= product.dailyGMV.toLocaleString() %>
+                                    <% } %>
+                                </td>
+                                <td><%= product.shopName %></td>
+                                <td><%= product.shopSales.toLocaleString() %></td>
+                                <td>
+                                    <% if (product.dailyShopSales === 0 && !product.dailyData || product.dailyData.length <= 1) { %>
+                                        -
+                                    <% } else { %>
+                                        <%= product.dailyShopSales.toLocaleString() %>
+                                    <% } %>
+                                </td>
+                                <td><%= moment(product.lastUpdated).format('YYYY-MM-DD HH:mm') %></td>
+                                <td class="actions">
+                                    <button class="download-btn" data-id="<%= product._id %>" title="下载历史数据">
+                                        <span class="icon">📥</span>
+                                    </button>
+                                    <button class="delete-btn" data-id="<%= product._id %>" title="删除商品">
+                                        <span class="icon">🗑️</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="10" class="no-data">暂无数据，请添加商品</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </section>
+    </div>
+    
+    <div id="confirmDialog" class="dialog hidden">
+        <div class="dialog-content">
+            <h2>确认删除</h2>
+            <p>确定要删除这个商品吗？删除后将无法恢复。</p>
+            <div class="dialog-buttons">
+                <button id="cancelDeleteBtn">取消</button>
+                <button id="confirmDeleteBtn">确认删除</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/js/main.js"></script>
+</body>
+</html> 
