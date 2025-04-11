@@ -18,7 +18,8 @@ exports.getProducts = async (req, res) => {
     
     // 执行查询
     console.log('开始执行数据库查询...');
-    let products = await Product.find().lean().exec();
+    console.log('应用排序选项:', sortOptions);
+    let products = await Product.find().sort(sortOptions).lean().exec();
     
     // 确保products是数组
     if (!Array.isArray(products)) {
