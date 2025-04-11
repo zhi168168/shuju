@@ -33,9 +33,7 @@
         <section class="product-list">
             <div class="table-actions">
                 <div class="results-info">共 <span id="totalCount"><%= products.length %></span> 条数据</div>
-                <div class="download-all">
-                    <button id="downloadAllBtn">导出全部数据</button>
-                </div>
+                <!-- 导出全部数据按钮已隐藏 -->
             </div>
             
             <table>
@@ -145,9 +143,7 @@
                                 </td>
                                 <td><%= moment(product.lastUpdated).format('YYYY-MM-DD HH:mm') %></td>
                                 <td class="actions">
-                                    <button class="download-btn" data-id="<%= product._id %>" title="下载历史数据">
-                                        <span class="icon">📥</span>
-                                    </button>
+                                    <!-- 下载按钮已隐藏 -->
                                     <button class="delete-btn" data-id="<%= product._id %>" title="删除商品">
                                         <span class="icon">🗑️</span>
                                     </button>
