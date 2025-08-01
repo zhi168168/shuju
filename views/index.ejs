@@ -20,7 +20,7 @@
                 <button id="addProductBtn">批量新增</button>
             </div>
             <div class="tip">提示：每行输入一个链接，回车分隔多个链接</div>
-            <button id="triggerCrawlBtn" class="secondary-btn">手动更新全部数据</button>
+            <button id="triggerCrawlBtn" class="secondary-btn" style="display: none;">手动更新全部数据</button>
         </section>
         
         <div id="loadingOverlay" class="hidden">
@@ -33,7 +33,12 @@
         <section class="product-list">
             <div class="table-actions">
                 <div class="results-info">共 <span id="totalCount"><%= products.length %></span> 条数据</div>
-                <!-- 导出全部数据按钮已隐藏 -->
+                <div class="filter-buttons">
+                    <a href="?sort=<%= currentSort %>&order=<%= currentOrder %>" 
+                       class="filter-btn <%= !showFavorites ? 'active' : '' %>">全部商品</a>
+                    <a href="?sort=<%= currentSort %>&order=<%= currentOrder %>&favorites=true" 
+                       class="filter-btn <%= showFavorites ? 'active' : '' %>">❤️ 收藏商品</a>
+                </div>
             </div>
             
             <table>
@@ -116,34 +121,39 @@
                                         <%= product.name %>
                                     </a>
                                 </td>
-                                <td><%= product.price %></td>
-                                <td><%= product.sales.toLocaleString() %></td>
+                                <td><%= product.price || 0 %></td>
+                                <td><%= product.sales ? product.sales.toLocaleString() : 0 %></td>
                                 <td>
-                                    <% if (product.dailyProductSales === 0 && !product.dailyData || product.dailyData.length <= 1) { %>
+                                    <% if (product.dailyProductSales === 0 && (!product.dailyData || product.dailyData.length <= 1)) { %>
                                         -
                                     <% } else { %>
-                                        <%= product.dailyProductSales.toLocaleString() %>
+                                        <%= product.dailyProductSales ? product.dailyProductSales.toLocaleString() : 0 %>
                                     <% } %>
                                 </td>
                                 <td>
-                                    <% if (product.dailyGMV === 0 && !product.dailyData || product.dailyData.length <= 1) { %>
+                                    <% if (product.dailyGMV === 0 && (!product.dailyData || product.dailyData.length <= 1)) { %>
                                         -
                                     <% } else { %>
-                                        <%= product.dailyGMV.toLocaleString() %>
+                                        <%= product.dailyGMV ? product.dailyGMV.toLocaleString() : 0 %>
                                     <% } %>
                                 </td>
-                                <td><%= product.shopName %></td>
-                                <td><%= product.shopSales.toLocaleString() %></td>
+                                <td><%= product.shopName || '未知店铺' %></td>
+                                <td><%= product.shopSales ? product.shopSales.toLocaleString() : 0 %></td>
                                 <td>
-                                    <% if (product.dailyShopSales === 0 && !product.dailyData || product.dailyData.length <= 1) { %>
+                                    <% if (product.dailyShopSales === 0 && (!product.dailyData || product.dailyData.length <= 1)) { %>
                                         -
                                     <% } else { %>
-                                        <%= product.dailyShopSales.toLocaleString() %>
+                                        <%= product.dailyShopSales ? product.dailyShopSales.toLocaleString() : 0 %>
                                     <% } %>
                                 </td>
                                 <td><%= moment(product.lastUpdated).format('YYYY-MM-DD HH:mm') %></td>
                                 <td class="actions">
-                                    <!-- 下载按钮已隐藏 -->
+                                    <button class="favorite-btn" data-id="<%= product._id %>" title="<%= product.isFavorite ? '取消收藏' : '添加收藏' %>">
+                                        <span class="icon"><%= product.isFavorite ? '❤️' : '🤍' %></span>
+                                    </button>
+                                    <button class="download-btn" data-id="<%= product._id %>" title="下载Excel数据">
+                                        <span class="icon">📊</span>
+                                    </button>
                                     <button class="delete-btn" data-id="<%= product._id %>" title="删除商品">
                                         <span class="icon">🗑️</span>
                                     </button>

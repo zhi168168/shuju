@@ -18,7 +18,8 @@ const productSchema = new mongoose.Schema({
   dailyData: [dailyDataSchema],
   dailyProductSales: { type: Number, default: 0 },
   dailyShopSales: { type: Number, default: 0 },
-  dailyGMV: { type: Number, default: 0 }
+  dailyGMV: { type: Number, default: 0 },
+  isFavorite: { type: Boolean, default: false }
 });
 
 module.exports = mongoose.model('Product', productSchema); 

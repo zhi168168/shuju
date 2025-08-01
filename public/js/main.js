@@ -20,49 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   let currentProductIdToDelete = null;
   
-  // 添加商品
-  addProductBtn.addEventListener('click', async () => {
-    const url = productUrlInput.value.trim();
-    
-    if (!url) {
-      showToast('请输入商品链接');
-      return;
-    }
-    
-    if (!url.includes('xiaohongshu.com')) {
-      showToast('请输入有效的小红书商品链接');
-      return;
-    }
-    
-    showLoading('正在爬取商品数据...');
-    
-    try {
-      const response = await fetch(`${API_BASE}/products`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ url })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        showToast('商品添加成功');
-        productUrlInput.value = '';
-        
-        // 刷新页面显示新数据
-        window.location.reload();
-      } else {
-        showToast('添加失败: ' + data.message);
-      }
-    } catch (error) {
-      showToast('添加失败: ' + error.message);
-    } finally {
-      hideLoading();
-    }
-  });
-  
+
   // 批量添加商品
   addProductBtn.addEventListener('click', async () => {
     const urlsText = productUrlInput.value.trim();
@@ -153,6 +111,76 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
+  // 收藏/取消收藏商品
+  document.addEventListener('click', async (e) => {
+    if (e.target.closest('.favorite-btn')) {
+      const btn = e.target.closest('.favorite-btn');
+      const productId = btn.dataset.id;
+      
+      console.log('点击收藏按钮，商品ID:', productId);
+      
+      try {
+        const response = await fetch(`${API_BASE}/products/${productId}/favorite`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // 更新按钮图标和标题
+          const iconSpan = btn.querySelector('.icon');
+          if (data.isFavorite) {
+            iconSpan.textContent = '❤️';
+            btn.title = '取消收藏';
+          } else {
+            iconSpan.textContent = '🤍';
+            btn.title = '添加收藏';
+          }
+          
+          showToast(data.message);
+        } else {
+          showToast('操作失败: ' + data.message);
+        }
+      } catch (error) {
+        console.error('收藏操作失败:', error);
+        showToast('收藏操作失败: ' + error.message);
+      }
+    }
+  });
+  
+  // 下载Excel数据
+  document.addEventListener('click', async (e) => {
+    if (e.target.closest('.download-btn')) {
+      const btn = e.target.closest('.download-btn');
+      const productId = btn.dataset.id;
+      
+      console.log('点击下载按钮，商品ID:', productId);
+      
+      try {
+        // 显示下载提示
+        showToast('正在生成Excel文件...');
+        
+        // 创建下载链接并触发下载
+        const downloadUrl = `${API_BASE}/products/${productId}/excel`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast('Excel文件下载开始');
+      } catch (error) {
+        console.error('下载失败:', error);
+        showToast('下载失败: ' + error.message);
+      }
+    }
+  });
+  
   // 取消删除
   cancelDeleteBtn.addEventListener('click', () => {
     console.log('点击取消删除按钮');
@@ -228,15 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
-  // 下载历史数据
-  document.addEventListener('click', (e) => {
-    if (e.target.closest('.download-btn')) {
-      const btn = e.target.closest('.download-btn');
-      const productId = btn.dataset.id;
-      
-      window.location.href = `${API_BASE}/products/${productId}/history`;
-    }
-  });
+
   
   // 下载全部数据
   if (downloadAllBtn) {

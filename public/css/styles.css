@@ -146,6 +146,32 @@ button:hover {
   color: var(--text-secondary);
 }
 
+.filter-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  background-color: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-color);
+  text-decoration: none;
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.filter-btn:hover {
+  background-color: var(--background-color);
+}
+
+.filter-btn.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -200,17 +226,28 @@ tbody tr:hover {
 
 .actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
 }
 
-.download-btn, .delete-btn {
+.favorite-btn, .download-btn, .delete-btn {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 16px;
-  padding: 5px;
-  border-radius: 5px;
+  font-size: 18px;
+  padding: 8px;
+  border-radius: 6px;
   transition: var(--transition);
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favorite-btn {
+  color: var(--warning-color);
 }
 
 .download-btn {
@@ -221,7 +258,7 @@ tbody tr:hover {
   color: var(--danger-color);
 }
 
-.download-btn:hover, .delete-btn:hover {
+.favorite-btn:hover, .download-btn:hover, .delete-btn:hover {
   background-color: rgba(0, 0, 0, 0.05);
 }
 

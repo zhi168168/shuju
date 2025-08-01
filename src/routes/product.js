@@ -24,6 +24,12 @@ router.delete('/products/:id', productController.deleteProduct);
 // 获取产品历史数据（用于下载）
 router.get('/products/:id/history', productController.getProductHistory);
 
+// 切换商品收藏状态
+router.post('/products/:id/favorite', productController.toggleFavorite);
+
+// 下载商品Excel数据
+router.get('/products/:id/excel', productController.downloadProductExcel);
+
 // 获取爬取状态
 router.get('/crawl-status', productController.getCrawlingStatus);
 

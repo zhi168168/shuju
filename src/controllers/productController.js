@@ -10,16 +10,24 @@ exports.getProducts = async (req, res) => {
     console.log('开始获取商品列表...');
     const sortField = req.query.sort || 'lastUpdated';
     const sortOrder = req.query.order === 'asc' ? 1 : -1;
+    const showFavorites = req.query.favorites === 'true';
     
     const sortOptions = {};
     sortOptions[sortField] = sortOrder;
     
-    console.log(`查询参数: sortField=${sortField}, sortOrder=${sortOrder}`);
+    // 构建查询条件
+    const queryOptions = {};
+    if (showFavorites) {
+      queryOptions.isFavorite = true;
+    }
+    
+    console.log(`查询参数: sortField=${sortField}, sortOrder=${sortOrder}, showFavorites=${showFavorites}`);
     
     // 执行查询
     console.log('开始执行数据库查询...');
     console.log('应用排序选项:', sortOptions);
-    let products = await Product.find().sort(sortOptions).lean().exec();
+    console.log('查询条件:', queryOptions);
+    let products = await Product.find(queryOptions).sort(sortOptions).lean().exec();
     
     // 确保products是数组
     if (!Array.isArray(products)) {
@@ -49,7 +57,8 @@ exports.getProducts = async (req, res) => {
       products: products || [],
       moment,
       currentSort: sortField,
-      currentOrder: req.query.order || 'desc'
+      currentOrder: req.query.order || 'desc',
+      showFavorites: showFavorites
     });
     console.log('页面渲染完成');
   } catch (error) {
@@ -63,6 +72,7 @@ exports.getProducts = async (req, res) => {
         moment,
         currentSort: 'lastUpdated',
         currentOrder: 'desc',
+        showFavorites: false,
         error: error.message
       });
     } catch (renderError) {
@@ -291,5 +301,151 @@ exports.triggerCrawl = async (req, res) => {
     global.crawlingStatus = { isActive: false };
     console.error('启动爬取任务失败:', error);
     res.status(500).json({ success: false, message: '启动爬取任务失败: ' + error.message });
+  }
+};
+
+// 切换商品收藏状态
+exports.toggleFavorite = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    console.log('切换收藏状态，商品ID:', productId);
+    
+    // 先获取当前状态
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: '商品不存在' });
+    }
+    
+    const newFavoriteStatus = !product.isFavorite;
+    
+    // 使用findByIdAndUpdate直接更新，避免完整文档验证
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      { isFavorite: newFavoriteStatus },
+      { new: true, runValidators: false } // 不运行完整验证
+    );
+    
+    console.log(`商品 ${product.name} 收藏状态已更新为: ${newFavoriteStatus}`);
+    
+    res.json({ 
+      success: true, 
+      isFavorite: newFavoriteStatus,
+      message: newFavoriteStatus ? '已添加到收藏' : '已取消收藏'
+    });
+  } catch (error) {
+    console.error('切换收藏状态失败:', error);
+    res.status(500).json({ success: false, message: '操作失败: ' + error.message });
+  }
+};
+
+// 下载商品Excel数据
+exports.downloadProductExcel = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.findById(productId);
+    
+    if (!product) {
+      return res.status(404).json({ success: false, message: '商品不存在' });
+    }
+    
+    console.log(`开始生成商品 ${product.name} 的Excel文件`);
+    
+    const XLSX = require('xlsx');
+    
+    // 准备数据
+    const excelData = [];
+    
+    // 添加表头
+    excelData.push([
+      '日期',
+      '商品名称', 
+      '商品链接',
+      '价格(元)',
+      '商品销量',
+      '店铺名称',
+      '店铺销量',
+      '日销量',
+      '日GMV(元)'
+    ]);
+    
+    // 添加历史数据
+    if (product.dailyData && product.dailyData.length > 0) {
+      // 按日期排序
+      const sortedData = product.dailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+      let previousProductSales = 0;
+      
+      sortedData.forEach((data, index) => {
+        const date = moment(data.date).format('YYYY-MM-DD');
+        
+        // 计算日销量和日GMV
+        let dailySales = 0;
+        if (index > 0) {
+          dailySales = data.productSales - previousProductSales;
+        }
+        const dailyGMV = dailySales * data.price;
+        
+        excelData.push([
+          date,
+          product.name,
+          product.url,
+          data.price,
+          data.productSales,
+          product.shopName,
+          data.shopSales,
+          dailySales,
+          dailyGMV
+        ]);
+        
+        previousProductSales = data.productSales;
+      });
+    } else {
+      // 如果没有历史数据，添加当前数据
+      excelData.push([
+        moment().format('YYYY-MM-DD'),
+        product.name,
+        product.url,
+        product.price,
+        product.sales,
+        product.shopName,
+        product.shopSales,
+        0,
+        0
+      ]);
+    }
+    
+    // 创建工作簿和工作表
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    
+    // 设置列宽
+    ws['!cols'] = [
+      { wch: 12 }, // 日期
+      { wch: 25 }, // 商品名称
+      { wch: 30 }, // 商品链接
+      { wch: 10 }, // 价格
+      { wch: 12 }, // 商品销量
+      { wch: 20 }, // 店铺名称
+      { wch: 12 }, // 店铺销量
+      { wch: 10 }, // 日销量
+      { wch: 12 }  // 日GMV
+    ];
+    
+    XLSX.utils.book_append_sheet(wb, ws, '商品数据');
+    
+    // 生成Excel文件
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    
+    // 设置响应头
+    const fileName = `${product.name.replace(/[<>:"/\\|?*]/g, '_')}-数据统计.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+    
+    console.log(`Excel文件生成完成: ${fileName}`);
+    res.send(buffer);
+    
+  } catch (error) {
+    console.error('生成Excel文件失败:', error);
+    res.status(500).json({ success: false, message: '生成Excel文件失败: ' + error.message });
   }
 }; 

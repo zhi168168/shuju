@@ -9,12 +9,15 @@
 - 每天早上8点自动更新所有商品数据
 - 跟踪商品和店铺的日销量变化
 - 支持按照各种指标排序显示
-- 支持导出历史数据
+- **🆕 收藏功能**: 收藏感兴趣的商品，支持筛选查看收藏商品
+- **🆕 Excel导出**: 下载商品完整历史数据（包含日销量、日GMV统计）
 - 支持增加/删除商品
 
 ## 服务器信息
 
-- **服务器IP**: 14.103.203.205
+- **服务器IP**: 120.48.158.156
+- **访问端口**: 7731
+- **访问地址**: http://120.48.158.156:7731
 - **用户**: root
 - **部署目录**: /var/www/xiaohongshu-monitor
 - **进程管理**: PM2 (服务名: xiaohongshu-monitor)
@@ -157,7 +160,7 @@ npm install
 创建`.env`文件:
 
 ```
-PORT=3000
+PORT=7731
 MONGODB_URI=mongodb://localhost:27017/xiaohongshu-monitor
 NODE_ENV=production
 USE_STATIC_HTML=false
