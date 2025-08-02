@@ -178,8 +178,8 @@ async function processBatchUrls(urls) {
   let results = [];
   
   try {
-    // 并行爬取商品，最多3个并发
-    const concurrency = 3;
+    // 并行爬取商品，最多2个并发
+    const concurrency = 2;
     const processedUrls = [];
     
     // 处理单个URL的函数
