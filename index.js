@@ -51,8 +51,8 @@ mongoose.connect(process.env.MONGODB_URI, {
   console.error('数据库连接失败:', err);
 });
 
-// 定时任务 - 每天早上8点自动爬取数据
-cron.schedule('0 8 * * *', () => {
+// 定时任务 - 每天早上5点自动爬取数据
+cron.schedule('0 5 * * *', () => {
   console.log('开始执行每日定时爬取任务...');
   crawlerService.crawlAllProducts().catch(err => {
     console.error('定时爬取任务出错:', err);
