@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Product = require('../models/product');
+const Product = require('../models/Product');
 const crawlerService = require('../services/crawler');
 const moment = require('moment');
 const { validationResult } = require('express-validator');
