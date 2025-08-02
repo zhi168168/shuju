@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-const Product = require('../models/product');
+const Product = require('../models/Product');
 
 // 从文本中提取数字
 const extractNumber = (text) => {
@@ -16,6 +16,11 @@ const extractNumber = (text) => {
 
 // 爬取单个产品数据
 const crawlProduct = async (url) => {
+  // 确保URL有协议前缀
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://' + url;
+  }
+  
   console.log(`开始爬取商品数据: ${url}`);
   
   const browser = await puppeteer.launch({

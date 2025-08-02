@@ -288,6 +288,14 @@ tbody tr:hover {
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   text-align: center;
+  min-width: 300px;
+}
+
+#loadingText {
+  white-space: pre-line;
+  line-height: 1.5;
+  color: var(--text-color);
+  font-size: 14px;
 }
 
 .spinner {

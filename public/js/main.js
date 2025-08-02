@@ -46,9 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    showLoading(`正在批量爬取 ${urls.length} 个商品数据...`);
+    showLoading(`准备批量添加 ${urls.length} 个商品...`);
     
     try {
+      // 启动批量添加任务（不等待完成）
       const response = await fetch(`${API_BASE}/products/batch`, {
         method: 'POST',
         headers: {
@@ -57,20 +58,16 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ urls })
       });
       
-      const data = await response.json();
-      
-      if (data.success) {
-        showToast(`成功添加 ${data.successCount} 个商品，失败 ${data.failCount} 个`);
-        productUrlInput.value = '';
-        
-        // 刷新页面显示新数据
-        window.location.reload();
+      if (response.ok) {
+        // 开始监控进度
+        checkBatchAddingProgress();
       } else {
-        showToast('批量添加失败: ' + data.message);
+        const data = await response.json();
+        showToast('批量添加失败: ' + (data.message || '未知错误'));
+        hideLoading();
       }
     } catch (error) {
       showToast('批量添加失败: ' + error.message);
-    } finally {
       hideLoading();
     }
   });
@@ -289,6 +286,64 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('获取爬取状态失败:', error);
         // 发生错误时也清除定时器，避免无限请求
         clearInterval(statusInterval);
+      }
+    }, 1000);
+    
+    // 返回定时器ID，方便在需要时手动清除
+    return statusInterval;
+  }
+  
+  // 检查批量添加进度
+  function checkBatchAddingProgress() {
+    let statusInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`${API_BASE}/crawl-status`);
+        const data = await response.json();
+        
+        if (data.isActive) {
+          // 构建详细的进度信息
+          let progressMessage = `正在添加商品 (${data.current || 0}/${data.total || 0})`;
+          
+          if (data.successCount !== undefined && data.failCount !== undefined) {
+            progressMessage += `\n成功: ${data.successCount} | 失败: ${data.failCount}`;
+          }
+          
+          if (data.processing && data.processing.length > 0) {
+            progressMessage += `\n当前处理: ${data.processing.length} 个并发任务`;
+          }
+          
+          showLoading(progressMessage);
+        } else {
+          hideLoading();
+          clearInterval(statusInterval);
+          
+          // 批量添加完成，显示最终结果
+          if (data.hasOwnProperty('current') && data.hasOwnProperty('total')) {
+            const successCount = data.successCount || 0;
+            const failCount = data.failCount || 0;
+            const total = data.total || 0;
+            
+            if (total > 0) {
+              showToast(`批量添加完成！成功: ${successCount} 个，失败: ${failCount} 个`);
+              
+              // 清空输入框并刷新页面
+              if (productUrlInput) {
+                productUrlInput.value = '';
+              }
+              
+              // 延迟刷新页面以显示结果
+              setTimeout(() => {
+                window.location.reload();
+              }, 2000);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('获取批量添加状态失败:', error);
+        // 发生错误时也清除定时器，避免无限请求
+        clearInterval(statusInterval);
+        hideLoading();
+        showToast('获取进度状态失败');
       }
     }, 1000);
     

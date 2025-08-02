@@ -149,65 +149,122 @@ exports.batchAddProducts = async (req, res) => {
     global.crawlingStatus = {
       isActive: true,
       current: 0,
-      total: urls.length
+      total: urls.length,
+      successCount: 0,
+      failCount: 0,
+      processing: []
     };
     
-    let successCount = 0;
-    let failCount = 0;
-    let results = [];
+    // 立即返回响应，让前端开始轮询
+    res.status(200).json({
+      success: true,
+      message: '批量添加任务已启动',
+      total: urls.length
+    });
     
-    // 串行爬取每个商品
-    for (let i = 0; i < urls.length; i++) {
-      const url = urls[i];
-      
+    // 异步处理批量添加
+    processBatchUrls(urls);
+    
+  } catch (error) {
+    console.error('启动批量添加任务失败:', error);
+    res.status(500).json({ success: false, message: '启动批量添加任务失败: ' + error.message });
+  }
+};
+
+// 异步处理批量URL的函数
+async function processBatchUrls(urls) {
+  let successCount = 0;
+  let failCount = 0;
+  let results = [];
+  
+  try {
+    // 并行爬取商品，最多3个并发
+    const concurrency = 3;
+    const processedUrls = [];
+    
+    // 处理单个URL的函数
+    const processUrl = async (url, index) => {
       try {
-        console.log(`正在爬取 (${i+1}/${urls.length}): ${url}`);
+        console.log(`开始爬取 (${index+1}/${urls.length}): ${url}`);
         
-        // 更新当前进度
-        global.crawlingStatus.current = i + 1;
-        global.crawlingStatus.product = url;
+        // 更新正在处理的商品列表
+        global.crawlingStatus.processing.push(url);
         
         const result = await crawlerService.crawlAndAddProduct(url);
         
+        // 从正在处理列表中移除
+        const processingIndex = global.crawlingStatus.processing.indexOf(url);
+        if (processingIndex > -1) {
+          global.crawlingStatus.processing.splice(processingIndex, 1);
+        }
+        
         if (result.success) {
           successCount++;
+          global.crawlingStatus.successCount = successCount;
           results.push({ url, success: true, product: result.product });
+          console.log(`爬取成功 (${index+1}/${urls.length}): ${url}`);
         } else {
           failCount++;
+          global.crawlingStatus.failCount = failCount;
           results.push({ url, success: false, message: result.message });
+          console.log(`爬取失败 (${index+1}/${urls.length}): ${url} - ${result.message}`);
         }
+        
+        processedUrls.push(url);
+        global.crawlingStatus.current = processedUrls.length;
+        
+        return { url, success: result.success, result };
       } catch (error) {
-        console.error(`商品爬取失败 (${url}):`, error);
+        // 从正在处理列表中移除
+        const processingIndex = global.crawlingStatus.processing.indexOf(url);
+        if (processingIndex > -1) {
+          global.crawlingStatus.processing.splice(processingIndex, 1);
+        }
+        
+        console.error(`商品爬取失败 (${index+1}/${urls.length}): ${url}`, error);
         failCount++;
+        global.crawlingStatus.failCount = failCount;
         results.push({ url, success: false, message: error.message });
+        
+        processedUrls.push(url);
+        global.crawlingStatus.current = processedUrls.length;
+        
+        return { url, success: false, error };
       }
+    };
+    
+    // 并发处理URLs，每批处理concurrency个
+    for (let i = 0; i < urls.length; i += concurrency) {
+      const batch = urls.slice(i, i + concurrency);
+      const batchPromises = batch.map((url, batchIndex) => 
+        processUrl(url, i + batchIndex)
+      );
       
-      // 如果不是最后一个URL，添加延迟，避免频繁请求
-      if (i < urls.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 3000 + Math.random() * 2000));
+      // 等待当前批次完成
+      await Promise.all(batchPromises);
+      
+      // 如果不是最后一批，添加延迟避免过于频繁的请求
+      if (i + concurrency < urls.length) {
+        await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 1000));
       }
     }
     
-    // 重置爬取状态
-    global.crawlingStatus = { isActive: false };
-    
     console.log(`批量添加完成。成功: ${successCount}, 失败: ${failCount}`);
     
-    return res.status(200).json({
-      success: true,
-      successCount,
-      failCount,
-      results
-    });
-    
   } catch (error) {
-    // 重置爬取状态
-    global.crawlingStatus = { isActive: false };
-    
-    console.error('批量添加商品失败:', error);
-    res.status(500).json({ success: false, message: '批量添加商品失败: ' + error.message });
+    console.error('批量添加处理失败:', error);
+  } finally {
+    // 保存最终状态到全局状态中
+    global.crawlingStatus = { 
+      isActive: false,
+      current: urls.length,
+      total: urls.length,
+      successCount: successCount,
+      failCount: failCount,
+      processing: []
+    };
   }
-};
+}
 
 // 删除商品
 exports.deleteProduct = async (req, res) => {
