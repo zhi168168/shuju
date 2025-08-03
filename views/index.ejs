@@ -39,11 +39,17 @@
                     <a href="?sort=<%= currentSort %>&order=<%= currentOrder %>&favorites=true" 
                        class="filter-btn <%= showFavorites ? 'active' : '' %>">❤️ 收藏商品</a>
                 </div>
+                <div class="batch-actions">
+                    <button id="batchDeleteBtn" class="batch-delete-btn" disabled>批量删除 (<span id="selectedCount">0</span>)</button>
+                </div>
             </div>
             
             <table>
                 <thead>
                     <tr>
+                        <th class="checkbox-column">
+                            <input type="checkbox" id="selectAllCheckbox" title="全选/取消全选">
+                        </th>
                         <th>
                             <a href="?sort=name&order=<%= currentSort === 'name' && currentOrder === 'asc' ? 'desc' : 'asc' %>">
                                 商品名称
@@ -108,7 +114,14 @@
                                 <% } %>
                             </a>
                         </th>
-                        <th>最后更新</th>
+                        <th>
+                            <a href="?sort=lastUpdated&order=<%= currentSort === 'lastUpdated' && currentOrder === 'asc' ? 'desc' : 'asc' %>">
+                                最后更新
+                                <% if (currentSort === 'lastUpdated') { %>
+                                    <span class="sort-icon"><%= currentOrder === 'asc' ? '↑' : '↓' %></span>
+                                <% } %>
+                            </a>
+                        </th>
                         <th>操作</th>
                     </tr>
                 </thead>
@@ -116,6 +129,9 @@
                     <% if (products && Array.isArray(products) && products.length > 0) { %>
                         <% products.forEach(product => { %>
                             <tr data-id="<%= product._id %>">
+                                <td class="checkbox-column">
+                                    <input type="checkbox" class="row-checkbox" value="<%= product._id %>">
+                                </td>
                                 <td>
                                     <a href="<%= product.url %>" target="_blank" class="product-name">
                                         <%= product.name %>
@@ -162,7 +178,7 @@
                         <% }); %>
                     <% } else { %>
                         <tr>
-                            <td colspan="10" class="no-data">暂无数据，请添加商品</td>
+                            <td colspan="11" class="no-data">暂无数据，请添加商品</td>
                         </tr>
                     <% } %>
                 </tbody>
@@ -177,6 +193,17 @@
             <div class="dialog-buttons">
                 <button id="cancelDeleteBtn">取消</button>
                 <button id="confirmDeleteBtn">确认删除</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="batchConfirmDialog" class="dialog hidden">
+        <div class="dialog-content">
+            <h2>确认批量删除</h2>
+            <p id="batchDeleteMessage">确定要删除选中的 <span id="batchDeleteCount">0</span> 个商品吗？删除后将无法恢复。</p>
+            <div class="dialog-buttons">
+                <button id="cancelBatchDeleteBtn">取消</button>
+                <button id="confirmBatchDeleteBtn">确认删除</button>
             </div>
         </div>
     </div>

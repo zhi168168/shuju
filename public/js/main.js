@@ -409,4 +409,159 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('获取爬取状态失败:', error);
     }
   })();
+
+  // ==== 复选框和批量删除功能 ====
+  
+  // 获取相关元素
+  const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+  const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+  const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+  const selectedCountSpan = document.getElementById('selectedCount');
+  const batchConfirmDialog = document.getElementById('batchConfirmDialog');
+  const cancelBatchDeleteBtn = document.getElementById('cancelBatchDeleteBtn');
+  const confirmBatchDeleteBtn = document.getElementById('confirmBatchDeleteBtn');
+  const batchDeleteCountSpan = document.getElementById('batchDeleteCount');
+
+  // 更新选中计数和按钮状态
+  function updateBatchDeleteButton() {
+    const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+    const selectedCount = checkedBoxes.length;
+    
+    selectedCountSpan.textContent = selectedCount;
+    batchDeleteBtn.disabled = selectedCount === 0;
+    
+    // 更新选中行的样式
+    document.querySelectorAll('tbody tr').forEach(row => {
+      const checkbox = row.querySelector('.row-checkbox');
+      if (checkbox && checkbox.checked) {
+        row.classList.add('selected');
+      } else {
+        row.classList.remove('selected');
+      }
+    });
+  }
+
+  // 全选/取消全选功能
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function() {
+      const isChecked = this.checked;
+      document.querySelectorAll('.row-checkbox').forEach(checkbox => {
+        checkbox.checked = isChecked;
+      });
+      updateBatchDeleteButton();
+    });
+  }
+
+  // 行复选框事件
+  document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('row-checkbox')) {
+      updateBatchDeleteButton();
+      
+      // 更新全选复选框状态
+      const allCheckboxes = document.querySelectorAll('.row-checkbox');
+      const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+      
+      if (selectAllCheckbox) {
+        if (checkedCheckboxes.length === 0) {
+          selectAllCheckbox.indeterminate = false;
+          selectAllCheckbox.checked = false;
+        } else if (checkedCheckboxes.length === allCheckboxes.length) {
+          selectAllCheckbox.indeterminate = false;
+          selectAllCheckbox.checked = true;
+        } else {
+          selectAllCheckbox.indeterminate = true;
+        }
+      }
+    }
+  });
+
+  // 批量删除按钮点击事件
+  if (batchDeleteBtn) {
+    batchDeleteBtn.addEventListener('click', function() {
+      const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+      if (checkedBoxes.length === 0) {
+        showToast('请选择要删除的商品');
+        return;
+      }
+      
+      batchDeleteCountSpan.textContent = checkedBoxes.length;
+      batchConfirmDialog.classList.remove('hidden');
+    });
+  }
+
+  // 取消批量删除
+  if (cancelBatchDeleteBtn) {
+    cancelBatchDeleteBtn.addEventListener('click', function() {
+      batchConfirmDialog.classList.add('hidden');
+    });
+  }
+
+  // 确认批量删除
+  if (confirmBatchDeleteBtn) {
+    confirmBatchDeleteBtn.addEventListener('click', async function() {
+      const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+      const productIds = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+      
+      if (productIds.length === 0) {
+        showToast('请选择要删除的商品');
+        return;
+      }
+
+      try {
+        showLoading(`正在删除 ${productIds.length} 个商品...`);
+        
+        const response = await fetch(`${API_BASE}/products/batch-delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ productIds })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast(`成功删除 ${data.deletedCount} 个商品`);
+          
+          // 从DOM中移除被删除的行
+          productIds.forEach(id => {
+            const row = document.querySelector(`tr[data-id="${id}"]`);
+            if (row) {
+              row.remove();
+            }
+          });
+          
+          // 更新总数
+          const totalCountEl = document.getElementById('totalCount');
+          if (totalCountEl) {
+            const currentCount = parseInt(totalCountEl.textContent);
+            totalCountEl.textContent = Math.max(0, currentCount - data.deletedCount);
+          }
+          
+          // 重置选择状态
+          if (selectAllCheckbox) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+          }
+          updateBatchDeleteButton();
+          
+          // 刷新页面以确保数据一致性
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else {
+          showToast('批量删除失败: ' + (data.message || '未知错误'));
+        }
+      } catch (error) {
+        console.error('批量删除请求失败:', error);
+        showToast('批量删除失败: ' + error.message);
+      } finally {
+        hideLoading();
+        batchConfirmDialog.classList.add('hidden');
+      }
+    });
+  }
+
+  // 初始化批量删除按钮状态
+  updateBatchDeleteButton();
 }); 

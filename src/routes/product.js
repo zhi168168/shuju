@@ -20,6 +20,7 @@ router.post('/products/batch', [
 
 // 删除产品
 router.delete('/products/:id', productController.deleteProduct);
+router.post('/products/batch-delete', productController.batchDeleteProducts);
 
 // 获取产品历史数据（用于下载）
 router.get('/products/:id/history', productController.getProductHistory);

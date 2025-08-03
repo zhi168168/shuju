@@ -293,6 +293,46 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
+// 批量删除商品
+exports.batchDeleteProducts = async (req, res) => {
+  try {
+    const { productIds } = req.body;
+    console.log('接收到批量删除请求，商品IDs:', productIds);
+    
+    // 验证输入
+    if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json({ success: false, message: '请选择要删除的商品' });
+    }
+    
+    // 验证所有ID的格式
+    const validIds = productIds.filter(id => mongoose.Types.ObjectId.isValid(id));
+    if (validIds.length !== productIds.length) {
+      return res.status(400).json({ success: false, message: '存在无效的商品ID' });
+    }
+    
+    // 检查要删除的商品是否存在
+    const existingProducts = await Product.find({ _id: { $in: validIds } });
+    console.log(`找到 ${existingProducts.length} 个存在的商品，准备删除`);
+    
+    if (existingProducts.length === 0) {
+      return res.status(404).json({ success: false, message: '未找到要删除的商品' });
+    }
+    
+    // 执行批量删除
+    const result = await Product.deleteMany({ _id: { $in: validIds } });
+    console.log(`批量删除结果: 删除了 ${result.deletedCount} 个商品`);
+    
+    res.status(200).json({ 
+      success: true, 
+      message: `成功删除 ${result.deletedCount} 个商品`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error('批量删除商品失败:', error);
+    res.status(500).json({ success: false, message: '批量删除失败: ' + error.message });
+  }
+};
+
 // 获取商品历史数据（用于下载）
 exports.getProductHistory = async (req, res) => {
   try {
