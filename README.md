@@ -240,6 +240,10 @@ pm2 logs xiaohongshu-monitor
 3. 重启服务应用更改
 
 ---
+## 友情赞助
+cutle game:https://www.cutle.pro/
+
+rule34dle game:https://rule34d.com/
 
 项目维护者: [维护者名称]
-最后更新: 2023-08-18
+最后更新: 2026-07-09
