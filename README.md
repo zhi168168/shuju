@@ -242,10 +242,13 @@ pm2 logs xiaohongshu-monitor
 ---
 ## 友情赞助
 cutle game:https://www.cutle.pro/
-
 rule34dle game:https://rule34d.com/
-
 dontwordle game:https://www.dontwordle.pro/
+vexle：https://www.vexle.pro/
+7-0 game:https://www.7-0.pro/
+build a hooper:https://www.buildhooper.com/
+car simulator:https://www.carsimulator.pro/
+workreport:https://workreport.pro
 
 项目维护者: [维护者名称]
 最后更新: 2026-07-09
