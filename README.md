@@ -249,6 +249,7 @@ vexle：https://www.vexle.pro/
 build a hooper:https://www.buildhooper.com/
 car simulator:https://www.carsimulator.pro/
 workreport:https://workreport.pro
+purupuru maker:https://www.purupurumaker.pro/
 
 项目维护者: [维护者名称]
 最后更新: 2026-07-09
